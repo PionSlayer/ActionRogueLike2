@@ -20,6 +20,8 @@ ASCharacter::ASCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
 
+	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComp");
+
 }
 
 void ASCharacter::BeginPlay()
@@ -46,6 +48,7 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent -> BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
 	PlayerInputComponent -> BindAction("PrimaryAttack", IE_Pressed, this, &ASCharacter::PrimaryAttack);
+	PlayerInputComponent -> BindAction("PrimaryInteraction", IE_Pressed, this, &ASCharacter::PrimaryInteract);
 }
 
 
@@ -68,6 +71,12 @@ void ASCharacter::MoveSideways(float Value)
 
 void ASCharacter::PrimaryAttack()
 {
+	PlayAnimMontage(AttackAnim);
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack,this,&ASCharacter::PrimaryAttack_TimeElapsed,0.2f);
+}
+
+void ASCharacter::PrimaryAttack_TimeElapsed()
+{
 	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 	FTransform MyTransform = FTransform(GetControlRotation(),HandLocation);
 
@@ -75,7 +84,12 @@ void ASCharacter::PrimaryAttack()
 	MySpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
 	GetWorld()->SpawnActor<AActor>(ProjectileClass,MyTransform,MySpawnParams);
-	
+}
+
+void ASCharacter::PrimaryInteract()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Interaction Called:3"));
+	InteractionComp->PrimaryInteraction();
 }
 
 
