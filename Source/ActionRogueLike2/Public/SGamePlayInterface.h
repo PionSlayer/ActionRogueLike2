@@ -10,14 +10,16 @@ UINTERFACE(MinimalAPI)
 class USGamePlayInterface : public UInterface
 {
 	GENERATED_BODY()
+
 };
 
 
 class ACTIONROGUELIKE2_API ISGamePlayInterface
 {
 	GENERATED_BODY()
-
 public:
-	UFUNCTION(BlueprintNativeEvent)
+
+	
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
 	void Interact(APawn* InstigationPawn);
 };

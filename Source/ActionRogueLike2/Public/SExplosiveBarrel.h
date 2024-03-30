@@ -19,7 +19,7 @@ public:
 protected:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	URadialForceComponent* RadialForceComponent;
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,FVector NormalImpulse, const FHitResult& Hit);
