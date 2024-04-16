@@ -3,6 +3,7 @@
 #include "SCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 ASCharacter::ASCharacter()
@@ -21,6 +22,7 @@ ASCharacter::ASCharacter()
 	bUseControllerRotationYaw = false;
 
 	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComp");
+	AttributeComponent = CreateDefaultSubobject<USAttributeComponent>("AttributeComponent");
 
 }
 
@@ -42,6 +44,7 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	PlayerInputComponent -> BindAxis("MoveForward", this, &ASCharacter::MoveForward);
 	PlayerInputComponent -> BindAxis("MoveSideways", this, &ASCharacter::MoveSideways);
+	PlayerInputComponent -> BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 
 	
 	PlayerInputComponent -> BindAxis("Turn", this, &APawn::AddControllerYawInput);
@@ -50,8 +53,6 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent -> BindAction("PrimaryAttack", IE_Pressed, this, &ASCharacter::PrimaryAttack);
 	PlayerInputComponent -> BindAction("PrimaryInteraction", IE_Pressed, this, &ASCharacter::PrimaryInteract);
 }
-
-
 void ASCharacter::MoveForward(float Value)
 {
 	FRotator Direction = GetControlRotation();
@@ -77,9 +78,32 @@ void ASCharacter::PrimaryAttack()
 
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-	FTransform MyTransform = FTransform(GetControlRotation(),HandLocation);
+	FVector Start = CameraComp->GetComponentLocation();
+	FVector End = Start +(GetControlRotation().Vector()*10000);
+	TArray<FHitResult> Hits;
+	FCollisionObjectQueryParams Params;
+	Params.AddObjectTypesToQuery(ECC_WorldDynamic);
+	Params.AddObjectTypesToQuery(ECC_WorldStatic);
+	Params.AddObjectTypesToQuery(ECC_Pawn);
+	Params.AddObjectTypesToQuery(ECC_PhysicsBody);
+	GetWorld()->LineTraceMultiByObjectType(Hits,Start,End,Params);
+	AActor* hitActor;
+	bool foundHit = false;
+	FVector hitLocation;
+	for(FHitResult hit: Hits)
+	{
+		hitActor = hit.GetActor();
+		if(hitActor){if(hitActor != GetInstigator()){foundHit=true;}else{hitActor=nullptr;}}else{foundHit=true;}
+		if(foundHit){hitLocation = hit.Location;break;}
+	}
+	if(!foundHit){hitLocation = End;}
 
+	
+	DrawDebugSphere(GetWorld(),hitLocation,5,32,FColor::Red,false,2,0,2);
+	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+
+	FTransform MyTransform = FTransform(UKismetMathLibrary::FindLookAtRotation(HandLocation,hitLocation),HandLocation);
 	FActorSpawnParameters MySpawnParams;
 	MySpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	MySpawnParams.Instigator = this;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SAttributeComponent.h"
 #include "SInteractionComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Character.h"
@@ -31,10 +32,15 @@ protected:
 	USpringArmComponent* SpringArmComp;
 	UPROPERTY(EditAnywhere)
 	USInteractionComponent* InteractionComp;
-
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Components")
+	USAttributeComponent* AttributeComponent;
+	
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* AttackAnim;
 	FTimerHandle TimerHandle_PrimaryAttack;
+
+
 	
 	virtual void BeginPlay() override;
 

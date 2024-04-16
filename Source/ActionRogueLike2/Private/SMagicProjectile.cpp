@@ -2,42 +2,60 @@
 
 
 #include "SMagicProjectile.h"
+
+#include "SAttributeComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 
 // Sets default values
 ASMagicProjectile::ASMagicProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
-	SphereComp = CreateDefaultSubobject<USphereComponent>("SphereComp");
-	//SphereComp -> SetCollisionObjectType(ECC_WorldStatic);
-	//SphereComp -> SetCollisionResponseToAllChannels(ECR_Ignore);
-	//SphereComp -> SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	SphereComp -> SetCollisionProfileName("Projectile");
-	SphereComp -> SetEnableGravity(false);
-	RootComponent = SphereComp;
-
-	ParticleComp = CreateDefaultSubobject<UParticleSystemComponent>("ParticleComp");
-	ParticleComp ->SetupAttachment(SphereComp);
-
-	ProjectileComp = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileComp");
-	ProjectileComp -> InitialSpeed = 1000.0f;
-	ProjectileComp -> bRotationFollowsVelocity = true;
-	ProjectileComp -> bInitialVelocityInLocalSpace = true;
-	ProjectileComp -> ProjectileGravityScale = 0.0f;
-	
-
-
+	UseOnHit();
+	Damage = -20;
 }
 
 void ASMagicProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	SphereComp -> IgnoreActorWhenMoving(GetInstigator(),true);
 }
-void ASMagicProjectile::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
+void ASMagicProjectile::OnDissipate()
+{
+	Super::OnDissipate();
+	if(ParticleSystem)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(), // World context
+			ParticleSystem, // Your particle system template
+			GetActorLocation(), // World location where the emitter should spawn
+			FRotator::ZeroRotator, // Initial rotation
+			true // Whether to auto-destroy the emitter when it's done
+			);
+	}
+	Destroy();
 }
+
+void ASMagicProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	if(OtherActor)
+	{
+		if(OtherActor != GetInstigator())
+		{
+			USAttributeComponent* AttributeComponent = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
+			if(AttributeComponent)
+			{
+				AttributeComponent->ApplyHealthChange(Damage);
+			}
+			OnDissipate();
+		}
+		return;
+	}
+	OnDissipate();
+}
+
+
+
 
